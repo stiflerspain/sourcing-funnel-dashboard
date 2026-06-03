@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sourcing Funnel · Experimento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f1f5f9; --card-bg: #ffffff; --header-bg: #1e293b; --header-text: #f8fafc;
+    --text: #0f172a; --text-muted: #475569; --text-soft: #64748b;
+    --border: #e2e8f0; --border-strong: #cbd5e1;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+    --shadow-lg: 0 8px 24px rgba(15,23,42,.12);
+    --accent: #2563eb; --accent-dark: #1d4ed8;
+    --amber: #f59e0b; --amber-soft: #fef3c7; --green: #16a34a; --green-soft: #dcfce7;
+    --red: #dc2626; --red-soft: #fee2e2; --slate-soft: #f1f5f9; --radius: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Fira Sans', system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .mono { font-family: 'Fira Code', ui-monospace, monospace; }
+  button, select { font-family: inherit; }
+
+  .header { background: var(--header-bg); color: var(--header-text); padding: 16px 28px;
+    display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -.01em; }
+  .logo-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 4px rgba(245,158,11,.2); }
+  .demo-badge { font-size: .68rem; font-weight: 700; letter-spacing: .06em; background: var(--amber); color: #422006; padding: 3px 9px; border-radius: 6px; }
+  .run-pill { font-family: 'Fira Code', monospace; font-size: .72rem; background: rgba(248,250,252,.1); color: #cbd5e1; padding: 3px 9px; border-radius: 6px; }
+  .week-select { background: rgba(248,250,252,.12); color: var(--header-text); border: 1px solid rgba(248,250,252,.25);
+    border-radius: 6px; padding: 5px 10px; font-size: .78rem; font-weight: 600; cursor: pointer; }
+  .week-select option { color: #0f172a; }
+  .btn-refresh { background: var(--accent); color: #fff; border: none; cursor: pointer; font-size: .78rem; font-weight: 600; padding: 6px 13px; border-radius: 6px; transition: background .2s; }
+  .btn-refresh:hover { background: var(--accent-dark); }
+
+  .toggle-bar { display: flex; align-items: center; gap: 14px; background: var(--card-bg); padding: 14px 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .toggle-group { display: inline-flex; background: var(--slate-soft); padding: 4px; border-radius: 9px; gap: 2px; }
+  .toggle-btn { border: none; background: transparent; padding: 7px 16px; font-size: .8rem; font-weight: 600; color: var(--text-muted); border-radius: 6px; cursor: pointer; transition: all .2s; }
+  .toggle-btn.active { background: var(--card-bg); color: var(--text); box-shadow: var(--shadow); }
+  .toggle-btn:not(.active):hover { color: var(--text); }
+  .toggle-hint { font-size: .74rem; color: var(--text-soft); }
+
+  .breadcrumb { font-size: .82rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .breadcrumb .crumb-link { color: var(--accent); cursor: pointer; border: none; background: transparent; font-size: inherit; font-family: inherit; padding: 0; }
+  .breadcrumb .crumb-link:hover { text-decoration: underline; }
+  .breadcrumb .crumb-sep { color: var(--border-strong); }
+  .breadcrumb .crumb-current { color: var(--text); font-weight: 600; }
+  .btn-back { display: inline-flex; align-items: center; gap: 6px; background: var(--card-bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 11px 6px 9px; cursor: pointer; font-size: .8rem; font-weight: 600; transition: all .18s ease; box-shadow: var(--shadow); }
+  .btn-back:hover { background: var(--slate-soft); border-color: var(--border-strong); color: var(--accent); transform: translateX(-2px); }
+  .btn-back svg { width: 15px; height: 15px; flex: none; }
+
+  .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+  .stat { background: var(--card-bg); padding: 14px 28px; }
+  .stat-value { font-size: 1.6rem; font-weight: 700; font-family: 'Fira Code', monospace; color: var(--text); }
+  .stat-value.green { color: var(--green); } .stat-value.amber { color: var(--amber); } .stat-value.red { color: var(--red); }
+  .stat-label { font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+
+  .container { max-width: 1480px; margin: 0 auto; padding: 22px 28px 48px; }
+  .filters { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; background: var(--card-bg); padding: 14px 18px; border-radius: var(--radius); box-shadow: var(--shadow); }
+  .filter-group { display: flex; flex-direction: column; gap: 4px; }
+  .filter-group label { font-size: .68rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .filter-group input, .filter-group select { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: .85rem; color: var(--text); background: #fff; }
+  .filter-group input:focus, .filter-group select:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+  .filter-group input { min-width: 240px; }
+  .btn-reset { padding: 7px 14px; border: 1px solid var(--border); background: #fff; color: var(--text-muted); border-radius: 6px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: all .2s; }
+  .btn-reset:hover { background: var(--slate-soft); color: var(--text); }
+
+  .table-wrap { overflow: auto; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 28px; max-height: 75vh; animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  thead th { position: sticky; top: 0; background: #f8fafc; cursor: pointer; user-select: none; white-space: nowrap; padding: 12px 18px; text-align: left; border-bottom: 2px solid var(--border); font-weight: 600; color: var(--text-muted); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; transition: color .15s; z-index: 2; }
+  thead th:hover { color: var(--text); }
+  thead th.sorted { color: var(--accent); }
+  .sort-arrow { margin-left: 3px; font-size: .6rem; }
+  td { padding: 11px 18px; border-bottom: 1px solid var(--border); white-space: nowrap; vertical-align: middle; }
+  td.kw { white-space: normal; max-width: 320px; font-weight: 500; }
+  td.cat { color: var(--text-muted); }
+  td.cat-link { color: var(--accent); cursor: pointer; font-weight: 600; }
+  td.cat-link:hover { text-decoration: underline; }
+  td.num { font-family: 'Fira Code', monospace; text-align: right; font-weight: 600; }
+  tbody tr { transition: background .12s; }
+  tbody tr:nth-child(even) { background: #fafbfc; }
+  tbody tr:hover { background: #eff6ff; }
+  tbody tr.clickable { cursor: pointer; }
+  .empty-row td { text-align: center; color: var(--text-muted); padding: 32px; font-style: italic; }
+
+  .score-cell { display: flex; align-items: center; gap: 10px; min-width: 130px; }
+  .bars { display: inline-flex; gap: 3px; align-items: flex-end; height: 18px; }
+  .bar { width: 5px; background: var(--slate-soft); border-radius: 1.5px; transition: background .25s ease; }
+  .bar:nth-child(1){height:6px} .bar:nth-child(2){height:9px} .bar:nth-child(3){height:12px} .bar:nth-child(4){height:15px} .bar:nth-child(5){height:18px}
+  .bars[data-score="5"] .bar.on { background: var(--green); }
+  .bars[data-score="4"] .bar.on { background: #22c55e; }
+  .bars[data-score="3"] .bar.on { background: var(--amber); }
+  .bars[data-score="2"] .bar.on { background: #f97316; }
+  .bars[data-score="1"] .bar.on { background: var(--red); }
+  .score-num { font-family: 'Fira Code', monospace; font-size: .92rem; font-weight: 700; min-width: 18px; text-align: right; }
+  .score-num.s-5{color:var(--green)} .score-num.s-4{color:#16a34a} .score-num.s-3{color:var(--amber)} .score-num.s-2{color:#ea580c} .score-num.s-1{color:var(--red)}
+  .score-label { font-size: .7rem; color: var(--text-muted); white-space: nowrap; }
+
+  .pill-comp { display: inline-block; padding: 3px 10px; border-radius: 9999px; font-size: .75rem; font-weight: 700; font-family: 'Fira Code', monospace; min-width: 56px; text-align: center; }
+  .pill-comp.s-hi { background: var(--green-soft); color: #15803d; }
+  .pill-comp.s-mid { background: var(--amber-soft); color: #92400e; }
+  .pill-comp.s-lo { background: #ffedd5; color: #9a3412; }
+  .pill-comp.s-vlo { background: var(--red-soft); color: #b91c1c; }
+
+  .state-msg { text-align: center; padding: 64px 24px; color: var(--text-muted); }
+  .state-msg.error { color: var(--red); }
+  .state-msg code { font-family: 'Fira Code', monospace; background: var(--slate-soft); padding: 2px 6px; border-radius: 4px; }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+  @media (max-width: 920px) { .stats-bar { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 680px) { .header { padding: 12px 16px; } .container { padding: 16px; } .filter-group input { min-width: unset; width: 100%; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span class="logo-dot"></span>
+    <h1>Sourcing Funnel · MLC</h1>
+    <span class="demo-badge">EXPERIMENTO</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <label style="font-size:.72rem; color:#cbd5e1;">Semana</label>
+    <select class="week-select" id="week-select" aria-label="Semana de keywords"></select>
+    <span class="run-pill" id="meta-pill">cargando…</span>
+    <button class="btn-refresh" id="btn-refresh" aria-label="Recargar datos">↻ Recargar</button>
+  </div>
+</div>
+
+<div class="toggle-bar">
+  <div class="toggle-group" role="tablist" aria-label="Flujo de navegación">
+    <button class="toggle-btn active" data-view="jerarquico" role="tab">Jerárquico</button>
+    <button class="toggle-btn" data-view="directo" role="tab">Directo</button>
+    <button class="toggle-btn" data-view="keyword" role="tab">Por keyword</button>
+  </div>
+  <div class="breadcrumb" id="breadcrumb" aria-live="polite"></div>
+  <span class="toggle-hint" id="toggle-hint"></span>
+</div>
+
+<div class="stats-bar" id="stats-bar"></div>
+
+<div class="container">
+  <div class="filters">
+    <div class="filter-group">
+      <label for="f-search">Buscar</label>
+      <input id="f-search" type="text" placeholder="ej. audifonos">
+    </div>
+    <div class="filter-group">
+      <label for="f-maxcomp">Máx competidores</label>
+      <input id="f-maxcomp" type="number" min="0" placeholder="sin límite">
+    </div>
+    <div class="filter-group">
+      <label for="f-minscore">Mín score (1-5)</label>
+      <select id="f-minscore">
+        <option value="">Cualquiera</option>
+        <option value="5">Solo 5 (poca compe)</option>
+        <option value="4">4 o más</option>
+        <option value="3">3 o más</option>
+        <option value="2">2 o más</option>
+      </select>
+    </div>
+    <button class="btn-reset" id="btn-reset">Limpiar</button>
+  </div>
+
+  <div class="table-wrap" id="table-wrap">
+    <table id="tbl"><thead><tr id="thead-row"></tr></thead><tbody id="tbody"></tbody></table>
+  </div>
+  <div id="state" class="state-msg" style="display:none"></div>
+</div>
+
+<script>
+  // ============== STATE ==============
+  let VIEW = 'jerarquico';     // 'jerarquico' | 'directo' | 'keyword'
+  let WEEK = null;
+  let NAV = 'roots';           // jerarquico: roots|subs|kws ; directo: cats|kws ; keyword: kw
+  let SEL_ROOT = null;         // {id, name}
+  let SEL_SUB  = null;         // {id, name}
+  let CACHE = {};              // {results, roots, cats, subs:{root_id:[...]}}
+  let sortKey = 'score', sortDir = 'desc';
+
+  const SCORE_LABEL = { 5:'poca compe', 4:'baja', 3:'media', 2:'alta', 1:'saturada' };
+  function fmtNum(v){ return v==null ? '—' : Number(v).toLocaleString('es-CL'); }
+
+  function renderScoreCell(score){
+    const s = Math.max(1, Math.min(5, Math.round(score)));
+    const bars = Array.from({length:5},(_,i)=>`<span class="bar ${(i+1)<=s?'on':''}"></span>`).join('');
+    return `<div class="score-cell"><span class="bars" data-score="${s}" role="img" aria-label="Score ${s} de 5">${bars}</span>
+      <span class="score-num s-${s}">${s}</span><span class="score-label">${SCORE_LABEL[s]}</span></div>`;
+  }
+  function renderPill(n){
+    let b='s-vlo'; if(n<=50)b='s-hi'; else if(n<=200)b='s-mid'; else if(n<=1000)b='s-lo';
+    return `<span class="pill-comp ${b}">${fmtNum(n)}</span>`;
+  }
+
+  // ============== COLUMN DEFS ==============
+  const COLS = {
+    roots: [
+      {key:'score',label:'Score',type:'score'},
+      {key:'root_name',label:'Categoría raíz',type:'cat-link'},
+      {key:'median_competidores',label:'Competidores (mediana)',type:'pill'},
+      {key:'n_subs',label:'Subcategorías',type:'num'},
+      {key:'n_keywords',label:'Keywords',type:'num'},
+    ],
+    subs: [
+      {key:'score',label:'Score',type:'score'},
+      {key:'categoria',label:'Subcategoría',type:'cat-link'},
+      {key:'median_competidores',label:'Competidores (mediana)',type:'pill'},
+      {key:'n_keywords',label:'Keywords',type:'num'},
+    ],
+    cats: [
+      {key:'score',label:'Score',type:'score'},
+      {key:'categoria',label:'Categoría',type:'cat-link'},
+      {key:'root_name',label:'Raíz',type:'cat'},
+      {key:'median_competidores',label:'Competidores (mediana)',type:'pill'},
+      {key:'n_keywords',label:'Keywords',type:'num'},
+    ],
+    kws: [
+      {key:'score',label:'Score',type:'score'},
+      {key:'keyword',label:'Keyword',type:'kw'},
+      {key:'categoria',label:'Subcategoría',type:'cat'},
+      {key:'n_competidores',label:'Competidores',type:'pill'},
+    ],
+    keyword: [
+      {key:'score',label:'Score',type:'score'},
+      {key:'keyword',label:'Keyword',type:'kw'},
+      {key:'categoria',label:'Subcategoría',type:'cat'},
+      {key:'root_name',label:'Raíz',type:'cat'},
+      {key:'n_competidores',label:'Competidores',type:'pill'},
+    ],
+  };
+
+  let WEEKS_META = [];  // [{week, rows, mtime}]
+  async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error('No pude cargar '+url+' ('+r.status+')'); return r.json(); }
+
+  // ============== LOAD (estatico: lee ./data/*.json) ==============
+  async function loadWeeks(){
+    const idx = await fetchJSON('./data/weeks.json');
+    WEEKS_META = idx.weeks || [];
+    const sel = document.getElementById('week-select');
+    sel.innerHTML = '';
+    WEEKS_META.forEach(w => { const o=document.createElement('option'); o.value=w.week; o.textContent=`${w.week} (${w.rows.toLocaleString('es-CL')})`; sel.appendChild(o); });
+    if(!WEEK && WEEKS_META.length) WEEK = WEEKS_META[0].week;
+    sel.value = WEEK;
+  }
+  async function ensureBase(){
+    if(CACHE.week !== WEEK) CACHE = { week: WEEK };
+    if(!CACHE.results){
+      const base = './data/'+WEEK;
+      const [results, roots, cats, subs] = await Promise.all([
+        fetchJSON(base+'/results.json'),
+        fetchJSON(base+'/roots.json'),
+        fetchJSON(base+'/categories.json'),
+        fetchJSON(base+'/subs.json'),
+      ]);
+      CACHE.results = results; CACHE.roots = roots; CACHE.cats = cats; CACHE.subsMap = subs;
+    }
+  }
+  async function ensureSubs(rootId){ return (CACHE.subsMap && CACHE.subsMap[rootId]) || []; }
+
+  function setMetaPill(){
+    const m = WEEKS_META.find(w => w.week === WEEK);
+    const pill = document.getElementById('meta-pill');
+    if(!m){ pill.textContent = 'sin datos'; return; }
+    const d = new Date(m.mtime*1000);
+    pill.textContent = `${m.rows.toLocaleString('es-CL')} filas · ${d.toLocaleString('es-CL')}`;
+  }
+
+  async function load(){
+    try {
+      await loadWeeks();
+      await ensureBase();
+      setMetaPill();
+      render();
+    } catch(e){ showState(`Error de carga: <code>${e.message||e}</code>`, true); }
+  }
+
+  // ============== NAV ==============
+  function resetNav(){
+    if(VIEW==='jerarquico') NAV='roots';
+    else if(VIEW==='directo') NAV='cats';
+    else NAV='kw';
+    SEL_ROOT=null; SEL_SUB=null; sortKey='score'; sortDir='desc';
+  }
+  async function drillRoot(root){
+    SEL_ROOT = root; NAV='subs'; sortKey='score'; sortDir='desc';
+    await ensureSubs(root.id); render(); scrollTop();
+  }
+  function drillSub(sub){
+    SEL_SUB = sub; NAV = (VIEW==='jerarquico') ? 'kws' : 'kws';
+    sortKey='score'; sortDir='desc'; render(); scrollTop();
+  }
+  function drillCat(cat){ // flujo directo: cat -> kws
+    SEL_SUB = cat; NAV='kws'; sortKey='score'; sortDir='desc'; render(); scrollTop();
+  }
+  function goBack(){
+    if(VIEW==='jerarquico'){
+      if(NAV==='kws'){ NAV='subs'; SEL_SUB=null; }
+      else if(NAV==='subs'){ NAV='roots'; SEL_ROOT=null; }
+    } else if(VIEW==='directo'){
+      if(NAV==='kws'){ NAV='cats'; SEL_SUB=null; }
+    }
+    sortKey='score'; sortDir='desc'; render();
+  }
+  document.addEventListener('keydown', e => { if(e.key==='Escape') goBack(); });
+
+  // ============== RENDER ==============
+  function curLevel(){
+    if(VIEW==='keyword') return 'keyword';
+    if(VIEW==='jerarquico') return NAV; // roots|subs|kws
+    return NAV; // cats|kws
+  }
+  function curRows(){
+    const lvl = curLevel();
+    if(lvl==='roots') return CACHE.roots;
+    if(lvl==='subs')  return (CACHE.subsMap && CACHE.subsMap[SEL_ROOT.id]) || [];
+    if(lvl==='cats')  return CACHE.cats;
+    if(lvl==='keyword') return CACHE.results;
+    // kws (hoja en ambos flujos): filtra results por sub_id seleccionado
+    return CACHE.results.filter(r => String(r.sub_id) === String(SEL_SUB.id));
+  }
+
+  function render(){
+    renderToggle(); renderBreadcrumb(); renderHint();
+    renderHeader(); renderKPIs(); renderRows();
+  }
+  function renderToggle(){
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view===VIEW));
+  }
+  function renderHint(){
+    const h = document.getElementById('toggle-hint');
+    if(VIEW==='jerarquico') h.textContent = 'raíz → subcategoría → keyword';
+    else if(VIEW==='directo') h.textContent = 'categoría → keyword';
+    else h.textContent = 'todas las keywords de la semana';
+  }
+  function backBtn(){
+    return `<button class="btn-back" id="btn-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>Volver</span></button>`;
+  }
+  function renderBreadcrumb(){
+    const el = document.getElementById('breadcrumb'); el.innerHTML='';
+    const lvl = curLevel();
+    if(VIEW==='jerarquico'){
+      let h = '';
+      if(lvl!=='roots') h += backBtn() + '<span class="crumb-sep">·</span>';
+      h += `<span class="${lvl==='roots'?'crumb-current':'crumb-link'}" data-go="roots">Raíces</span>`;
+      if(SEL_ROOT) h += `<span class="crumb-sep">›</span><span class="${lvl==='subs'?'crumb-current':'crumb-link'}" data-go="subs">${SEL_ROOT.name}</span>`;
+      if(SEL_SUB && lvl==='kws') h += `<span class="crumb-sep">›</span><span class="crumb-current">${SEL_SUB.name}</span>`;
+      el.innerHTML = h;
+    } else if(VIEW==='directo'){
+      let h = '';
+      if(lvl==='kws') h += backBtn() + '<span class="crumb-sep">·</span>';
+      h += `<span class="${lvl==='cats'?'crumb-current':'crumb-link'}" data-go="cats">Categorías</span>`;
+      if(SEL_SUB && lvl==='kws') h += `<span class="crumb-sep">›</span><span class="crumb-current">${SEL_SUB.name}</span>`;
+      el.innerHTML = h;
+    }
+    const bb = document.getElementById('btn-back'); if(bb) bb.addEventListener('click', goBack);
+    el.querySelectorAll('[data-go]').forEach(s => s.addEventListener('click', () => {
+      const g = s.dataset.go;
+      if(g==='roots'){ NAV='roots'; SEL_ROOT=null; SEL_SUB=null; }
+      else if(g==='subs'){ NAV='subs'; SEL_SUB=null; }
+      else if(g==='cats'){ NAV='cats'; SEL_SUB=null; }
+      sortKey='score'; sortDir='desc'; render();
+    }));
+  }
+  function renderKPIs(){
+    const bar = document.getElementById('stats-bar');
+    const rows = curRows();
+    const lvl = curLevel();
+    const noun = lvl==='roots'?'raíces' : (lvl==='subs'||lvl==='cats')?'categorías' : 'keywords';
+    const c5 = rows.filter(r=>r.score===5).length, c4 = rows.filter(r=>r.score===4).length, c1 = rows.filter(r=>r.score===1).length;
+    const kpis = [[noun, fmtNum(rows.length),''],['score 5 (poca compe)', fmtNum(c5),'green'],['score 4', fmtNum(c4),'green'],['score 1 (saturadas)', fmtNum(c1),'red']];
+    bar.innerHTML = kpis.map(([l,v,c])=>`<div class="stat"><div class="stat-value mono ${c}">${v}</div><div class="stat-label">${l}</div></div>`).join('');
+  }
+  function renderHeader(){
+    const cols = COLS[curLevel()];
+    const tr = document.getElementById('thead-row');
+    tr.innerHTML = cols.map(c=>{
+      const sorted = c.key===sortKey;
+      const arrow = sorted ? `<span class="sort-arrow">${sortDir==='asc'?'▲':'▼'}</span>` : '';
+      return `<th data-key="${c.key}" class="${sorted?'sorted':''}">${c.label}${arrow}</th>`;
+    }).join('');
+    tr.querySelectorAll('th').forEach(th => th.addEventListener('click', ()=>{
+      const k = th.dataset.key;
+      if(sortKey===k) sortDir = sortDir==='asc'?'desc':'asc';
+      else { sortKey=k; sortDir = (k==='n_keywords'||k==='n_subs'||k==='max_competidores')?'desc':'asc'; }
+      render();
+    }));
+  }
+  function applyFilters(rows){
+    const q = document.getElementById('f-search').value.trim().toLowerCase();
+    const maxC = parseInt(document.getElementById('f-maxcomp').value,10);
+    const minS = parseInt(document.getElementById('f-minscore').value,10);
+    const lvl = curLevel();
+    return rows.filter(r=>{
+      const text = (lvl==='keyword'||lvl==='kws') ? r.keyword : (r.root_name||r.categoria||'');
+      const text2 = (lvl==='roots') ? r.root_name : (r.categoria||'');
+      if(q && !((text||'').toLowerCase().includes(q) || (text2||'').toLowerCase().includes(q))) return false;
+      const n = (lvl==='keyword'||lvl==='kws') ? r.n_competidores : r.median_competidores;
+      if(!isNaN(maxC) && n>maxC) return false;
+      if(!isNaN(minS) && r.score<minS) return false;
+      return true;
+    });
+  }
+  function sortRows(rows){
+    const k=sortKey, dir=sortDir==='asc'?1:-1;
+    return rows.slice().sort((a,b)=>{
+      const va=a[k], vb=b[k];
+      if(typeof va==='string'||typeof vb==='string') return (''+(va||'')).localeCompare(''+(vb||''))*dir;
+      return ((va||0)-(vb||0))*dir;
+    });
+  }
+  function renderRows(){
+    const lvl = curLevel();
+    const cols = COLS[lvl];
+    let rows = sortRows(applyFilters(curRows()));
+    const tb = document.getElementById('tbody');
+    const wrap = document.getElementById('table-wrap');
+    wrap.classList.remove('fade'); void wrap.offsetWidth;
+    tb.innerHTML='';
+    if(!rows.length){ tb.innerHTML=`<tr class="empty-row"><td colspan="${cols.length}">Sin resultados con los filtros actuales.</td></tr>`; return; }
+    const MAX=2000;
+    const frag = document.createDocumentFragment();
+    const clickable = (lvl==='roots'||lvl==='subs'||lvl==='cats');
+    rows.slice(0,MAX).forEach(r=>{
+      const tr=document.createElement('tr');
+      if(clickable) tr.classList.add('clickable');
+      cols.forEach(c=>{
+        const td=document.createElement('td'); const v=r[c.key];
+        if(c.type==='score') td.innerHTML=renderScoreCell(v);
+        else if(c.type==='pill'){ td.className='num'; td.innerHTML=renderPill(v); }
+        else if(c.type==='num'){ td.className='num'; td.textContent=fmtNum(v); }
+        else if(c.type==='kw'){ td.className='kw'; td.textContent=v; }
+        else if(c.type==='cat'){ td.className='cat'; td.textContent=v; }
+        else if(c.type==='cat-link'){ td.className='cat-link'; td.textContent=v;
+          td.addEventListener('click', e=>{ e.stopPropagation(); onRowClick(lvl, r); });
+        } else td.textContent=v;
+        tr.appendChild(td);
+      });
+      if(clickable) tr.addEventListener('click', ()=>onRowClick(lvl, r));
+      frag.appendChild(tr);
+    });
+    tb.appendChild(frag);
+    if(rows.length>MAX){ const tr=document.createElement('tr'); tr.innerHTML=`<td colspan="${cols.length}" style="text-align:center;padding:14px;color:var(--text-muted);font-style:italic;">Mostrando ${MAX} de ${rows.length} — refiná filtros.</td>`; tb.appendChild(tr); }
+  }
+  function onRowClick(lvl, r){
+    if(lvl==='roots') drillRoot({id:r.root_id, name:r.root_name});
+    else if(lvl==='subs') drillSub({id:r.sub_id, name:r.categoria});
+    else if(lvl==='cats') drillCat({id:r.sub_id, name:r.categoria});
+  }
+  function scrollTop(){ document.querySelector('.container').scrollIntoView({behavior:'smooth', block:'start'}); }
+  function showState(msg, err){ const el=document.getElementById('state'); el.style.display='block'; el.className='state-msg'+(err?' error':''); el.innerHTML=msg; document.getElementById('table-wrap').style.display='none'; }
+
+  // ============== EVENTS ==============
+  document.querySelectorAll('.toggle-btn').forEach(b => b.addEventListener('click', ()=>{
+    if(b.dataset.view===VIEW) return;
+    VIEW=b.dataset.view; resetNav(); render();
+  }));
+  document.getElementById('week-select').addEventListener('change', async e=>{
+    WEEK=e.target.value; resetNav();
+    try { await ensureBase(); setMetaPill(); render(); }
+    catch(err){ showState(`Error: <code>${err.message||err}</code>`, true); }
+  });
+  document.getElementById('btn-refresh').addEventListener('click', ()=>{ CACHE={}; load(); });
+  document.getElementById('btn-reset').addEventListener('click', ()=>{ ['f-search','f-maxcomp','f-minscore'].forEach(id=>document.getElementById(id).value=''); render(); });
+  ['f-search','f-maxcomp','f-minscore'].forEach(id=>document.getElementById(id).addEventListener('input', render));
+
+  load();
+</script>
+</body>
+</html>
